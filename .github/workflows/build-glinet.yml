@@ -53,7 +53,7 @@ jobs:
         
     - name: Organize files
       id: organize
-      if: true && !failure() && !cancelled()
+      continue-on-error: true
       run: |
         cd ~/firmware
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
