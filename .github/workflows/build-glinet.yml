@@ -3,6 +3,11 @@ name: build gl.inet
 on:
   workflow_dispatch:
     inputs:
+      tag_main:
+        description: '请输入gl-inet/gl-infra-builder TAG'     
+        required: true
+        default: 'main' 
+
       device:
         description: '选择设备'     
         required: true
@@ -13,51 +18,68 @@ on:
         - target_wlan_ap-gl-axt1800
         - target_wlan_ap-gl-ax1800-5-4
         - target_wlan_ap-gl-axt1800-5-4
-        
+        - target_ipq40xx_gl-a1300
+        - target_mt7981_gl-mt2500
+        - target_mt7981_gl-mt3000
+        - target_siflower_gl-sf1200
+        - target_siflower_gl-sft1200
+        - target_ramips_gl-mt1300
+        - target_ath79_gl-s200
+
       ui:
-        description: '是否包含官方UI'
+        description: '是否包含官方UI (目前支持IPQ6018系列、mt7981系列、GL-A1300和GL-S200)'
         required: false
         type: boolean
+      
+      tag_no:
+        description: '请输入gl-inet/glinet4.x TAG'     
+        required: true
+        default: 'main' 
         
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v3
     - name: update
       run: |
         sudo apt update
-        sudo apt upgrade -y
-        sudo apt install build-essential libncurses5-dev gawk git libssl-dev gettext zlib1g-dev swig unzip time rsync python3 python3-setuptools python3-yaml -y
+        sudo apt install python build-essential libncurses5-dev gawk git libssl-dev gettext zlib1g-dev swig unzip time rsync python3 python3-setuptools python3-yaml subversion -y
         git config --global user.email "aa@163.com"
         git config --global user.name "aa"
     - name: make 
       run: |
-        ./build.sh ~ ${{ inputs.device }} ${{ inputs.ui }}
+        ./build.sh ~ ${{ inputs.device }} ${{ inputs.ui }} ${{ inputs.tag_main }} ${{ inputs.tag_no }}
         
     - name: Organize files
       id: organize
       if: true && !failure() && !cancelled()
       run: |
-        cd ~/gl-infra-builder/wlan-ap/openwrt/bin/targets/*/*
-        rm -rf packages
+        cd ~/firmware
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
-        echo "::set-output name=status::success"
-        
+        cd ~/packages
+        echo "PACKAGES=$PWD" >> $GITHUB_ENV
+        echo "status=success" >> $GITHUB_OUTPUT 
     - name: Upload firmware directory
       uses: actions/upload-artifact@main
       if: steps.organize.outputs.status == 'success' && !cancelled() && !failure()
       with:
         name: OpenWrt_firmware${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
         path: ${{ env.FIRMWARE }}
-            
+
+    - name: Upload packages directory
+      uses: actions/upload-artifact@main
+      if: steps.organize.outputs.status == 'success' && !cancelled() && !failure()
+      with:
+        name: OpenWrt_packages${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
+        path: ${{ env.PACKAGES }}
+
     - name: Generate release tag
       id: tag
       if: true && !failure() && !cancelled()
       run: |
-        echo "::set-output name=release_tag::$(date +"%Y.%m.%d-%H%M")"
-        echo "::set-output name=status::success"
-        
+        echo "release_tag=${{inputs.device}}.${{ inputs.ui }}.$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
+        echo "status=success" >> $GITHUB_OUTPUT 
     - name: Upload firmware to release
       uses: softprops/action-gh-release@v1
       if: steps.tag.outputs.status == 'success' && !cancelled() && !failure()
