@@ -7,9 +7,9 @@ feeds:
     - name: passwall
     uri: https://github.com/xiaorouji/openwrt-passwall.git
     branch: luci
-  - name: kenzok8_small
-    uri: https://github.com/kenzok8/small.git
-    branch: master
+  - name: small
+    uri: https://github.com/xiaorouji/openwrt-passwall.git
+    branch: packages
   - name: build
     uri: https://github.com/sirpdboy/build.git
     branch: master
@@ -25,8 +25,7 @@ packages:
   - ddns-scripts_aliyun
   - dnsmasq-full
   - luci-app-smartdns
-  - luci-app-wizard
-  - default-settings
+
   - luci-app-control-parentcontrol
 
 
